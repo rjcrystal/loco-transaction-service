@@ -22,6 +22,7 @@
 - Create a .env file with postgres connection string 
 - Crate a table in postgres with the below definition 
 - Run `go run handler.go logger.go main.go models.go store.go`
+- For Automated tests, run `go test`
 
 ### DDL for transactions table
 ```
