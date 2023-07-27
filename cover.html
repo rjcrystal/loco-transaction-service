@@ -1,0 +1,465 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>transaction-service: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">transaction-service/handler.go (67.9%)</option>
+				
+				<option value="file1">transaction-service/logger.go (100.0%)</option>
+				
+				<option value="file2">transaction-service/main.go (26.7%)</option>
+				
+				<option value="file3">transaction-service/models.go (100.0%)</option>
+				
+				<option value="file4">transaction-service/store.go (81.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "strconv"
+
+        "github.com/gin-gonic/gin"
+)
+
+func putTransaction(c *gin.Context) <span class="cov8" title="1">{
+        var pt putTransactionRequest
+        err := c.BindJSON(&amp;pt) // Bind json request body to struct and validate request
+        if err != nil </span><span class="cov8" title="1">{
+                lg.Warn().Err(err).Msg("Failed to validate the request ")
+                sendErrorResponse(errorResponse{Error: err.Error()}, c, 400)
+                return
+        }</span>
+        <span class="cov8" title="1">transactionID, _ := strconv.ParseInt(c.Param("transactionId"), 10, 64) // Get transaction ID from path
+
+        lg.Debug().Interface("request", pt).Int64("transactionID", transactionID).Send()
+
+        if transactionID == 0 </span><span class="cov8" title="1">{
+                sendErrorResponse(errorResponse{Error: errMissingOrInvalidTransactionID.Error()}, c, 400)
+                return
+        }</span>
+
+        <span class="cov8" title="1">err = Store.saveTransaction(transactionID, pt.Amount, pt.Type, pt.Parent) // Save transaction in Postgres
+        if err != nil </span><span class="cov0" title="0">{
+                sendErrorResponse(errorResponse{Error: err.Error()}, c, 500)
+                return
+        }</span>
+        <span class="cov8" title="1">sendSuccessResponse(successResponse{Status: "OK"}, c)</span>
+}
+
+func getTransactionSum(c *gin.Context) <span class="cov8" title="1">{
+        transactionID, _ := strconv.ParseInt(c.Param("transactionId"), 10, 64)
+        if transactionID == 0 </span><span class="cov0" title="0">{
+                sendErrorResponse(errorResponse{Error: errMissingOrInvalidTransactionID.Error()}, c, 400)
+                return
+        }</span>
+        <span class="cov8" title="1">t, err := Store.getTransactionSum(transactionID)
+        if err != nil </span><span class="cov0" title="0">{
+                sendErrorResponse(errorResponse{Error: err.Error()}, c, 400)
+                return
+        }</span>
+        <span class="cov8" title="1">sendSuccessResponse(getTransactionSumResponse{Sum: t}, c)</span>
+}
+
+func getTransactionsByType(c *gin.Context) <span class="cov8" title="1">{
+        transactionType := c.Param("type")
+        if len(transactionType) == 0 </span><span class="cov0" title="0">{
+                sendErrorResponse(errorResponse{Error: errMissingOrInvalidTransactionID.Error()}, c, 400)
+                return
+        }</span>
+        <span class="cov8" title="1">transactions, err := Store.getTransactionByType(transactionType)
+        if err != nil </span><span class="cov0" title="0">{
+                sendErrorResponse(errorResponse{Error: err.Error()}, c, 400)
+                return
+        }</span>
+        <span class="cov8" title="1">if len(transactions) == 0 </span><span class="cov8" title="1">{
+                sendSuccessResponse([]int64{}, c)
+                return
+        }</span>
+        <span class="cov8" title="1">sendSuccessResponse(transactions, c)</span>
+}
+
+func getTransactionsDetails(c *gin.Context) <span class="cov8" title="1">{
+        transactionID, _ := strconv.ParseInt(c.Param("transactionId"), 10, 64)
+        if transactionID == 0 </span><span class="cov0" title="0">{
+                sendErrorResponse(errorResponse{Error: errMissingOrInvalidTransactionID.Error()}, c, 400)
+                return
+        }</span>
+        <span class="cov8" title="1">t, err := Store.getTransactionByID(transactionID)
+        if err != nil </span><span class="cov0" title="0">{
+                sendErrorResponse(errorResponse{Error: err.Error()}, c, 400)
+                return
+        }</span>
+        <span class="cov8" title="1">sendSuccessResponse(t.toGetTransactionsDetailsResponse(), c)</span>
+}
+
+// healthCheck : checks if DB is reachable
+func healthCheck(c *gin.Context) <span class="cov8" title="1">{
+        lg := GetLogger()
+        err := Store.Ping()
+        if err != nil </span><span class="cov0" title="0">{
+                lg.Err(err).Msg("Failed to ping Postgres for healthcheck")
+                sendErrorResponse(struct{}{}, c, 500)
+                return
+        }</span>
+        <span class="cov8" title="1">sendSuccessResponse(successResponse{Status: "OK"}, c)</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
+
+import (
+        "time"
+
+        "github.com/gin-gonic/gin"
+        "github.com/rs/zerolog"
+        "github.com/rs/zerolog/log"
+)
+
+// GetLogger : Returns logger with configuration
+func GetLogger() zerolog.Logger <span class="cov8" title="1">{
+        zerolog.SetGlobalLevel(zerolog.WarnLevel)
+        if gin.IsDebugging() </span><span class="cov8" title="1">{
+                zerolog.SetGlobalLevel(zerolog.DebugLevel)
+        }</span>
+        <span class="cov8" title="1">zerolog.TimestampFunc = func() time.Time </span><span class="cov8" title="1">{
+                return time.Now().UTC()
+        }</span>
+        <span class="cov8" title="1">return log.With().Caller().Logger()</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package main
+
+import (
+        "github.com/gin-gonic/gin"
+        "github.com/joho/godotenv"
+        "github.com/rs/zerolog"
+)
+
+var lg zerolog.Logger
+
+func init() <span class="cov8" title="1">{
+        lg = GetLogger()
+
+        err := godotenv.Load()
+        if err != nil </span><span class="cov0" title="0">{
+                lg.Fatal().Msg("Error loading .env file")
+        }</span>
+        <span class="cov8" title="1">initPostgresConnection()</span>
+}
+
+func main() <span class="cov0" title="0">{
+        gin.DisableConsoleColor()
+        router := gin.New()
+
+        router.Use(gin.Logger())
+        router.Use(gin.Recovery())
+        router.PUT("/transactionservice/transaction/:transactionId", putTransaction)
+        router.GET("/transactionservice/types/:type", getTransactionsByType)
+        router.GET("/transactionservice/sum/:transactionId", getTransactionSum)
+        router.GET("/transactionservice/transaction/:transactionId", getTransactionsDetails)
+        router.GET("/health", healthCheck)
+
+        router.Run(":80")
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package main
+
+import (
+        "errors"
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+)
+
+type putTransactionRequest struct {
+        Amount float64 `json:"amount" binding:"required,gt=0"`
+        Type   string  `json:"type" binding:"required"`
+        Parent *int64  `json:"parent_id"`
+}
+
+type getTransactionsDetailsResponse struct {
+        Amount float64 `json:"amount"`
+        Type   string  `json:"type"`
+        Parent *int64  `json:"parent_id"`
+}
+
+type transaction struct {
+        ID     int64
+        Amount float64
+        Type   string
+        Parent *int64
+}
+
+type getTransactionSumResponse struct {
+        Sum float64 `json:"sum"`
+}
+
+func (t transaction) toGetTransactionsDetailsResponse() getTransactionsDetailsResponse <span class="cov8" title="1">{
+        return getTransactionsDetailsResponse{
+                Amount: t.Amount,
+                Type:   t.Type,
+                Parent: t.Parent,
+        }
+}</span>
+
+type errorResponse struct {
+        Error string `json:"error"`
+}
+
+type successResponse struct {
+        Status string `json:"status"`
+}
+
+var errMissingOrInvalidTransactionID = errors.New("Missing or Invalid Transaction ID in request path")
+
+// sendSuccessResponse :
+func sendSuccessResponse(payload interface{}, c *gin.Context) <span class="cov8" title="1">{
+        c.AbortWithStatusJSON(http.StatusOK, payload)
+}</span>
+
+// sendErrorResponse :
+func sendErrorResponse(payload interface{}, c *gin.Context, code int) <span class="cov8" title="1">{
+        c.AbortWithStatusJSON(code, payload)
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package main
+
+import (
+        "context"
+        "database/sql"
+        "os"
+        "time"
+
+        _ "github.com/lib/pq"
+)
+
+type store struct {
+        db *sql.DB
+}
+
+// Store : Global store variable
+var Store store
+
+// initPostgresConnection : initializes Postgres connection
+func initPostgresConnection() <span class="cov8" title="1">{
+        var err error
+        var db *sql.DB
+        connStr := os.Getenv("POSTGRES_CONN_STR")
+        db, err = sql.Open("postgres", connStr)
+
+        if err != nil </span><span class="cov0" title="0">{
+                lg.Fatal().Msg("Error Opening connection to the database")
+        }</span>
+
+        <span class="cov8" title="1">if err = db.Ping(); err != nil </span><span class="cov0" title="0">{
+                lg.Fatal().Msg("Failed to ping database")
+        }</span>
+
+        <span class="cov8" title="1">Store.db = db
+        lg.Info().Msg("The database is connected")</span>
+}
+
+func (s *store) saveTransaction(id int64, amount float64, transactionType string, parent *int64) error <span class="cov8" title="1">{
+        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+
+        insertStmt := `insert into "public"."transactions" ("id","amount", "type", "parent_id") values($1, $2, $3, $4)`
+        _, err := s.db.ExecContext(ctx, insertStmt, id, amount, transactionType, parent)
+        if err != nil </span><span class="cov0" title="0">{
+                lg.Err(err).Int64("id", id).Float64("amount", amount).Str("transactionType", transactionType).Interface("parent", parent).Msg("Error inserting transaction to DB")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return err</span>
+}
+
+func (s *store) getTransactionSum(ID int64) (float64, error) <span class="cov8" title="1">{
+        ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+        defer cancel()
+
+        var totalAmount float64
+        var responseID string
+
+        rows, err := s.db.QueryContext(ctx, `
+        WITH RECURSIVE cte AS (
+                SELECT id AS final_id, id, amount
+                FROM transactions
+                WHERE id = $1
+                UNION ALL
+                SELECT cte.final_id, tc.id, tc.amount
+                FROM cte
+                JOIN transactions tc ON tc.parent_id = cte.id
+          )
+          cycle id
+                set is_cycle
+                 using path
+          SELECT final_id, SUM(amount)
+          FROM cte where is_cycle=FALSE
+          GROUP BY final_id;
+        `, ID)
+        if err != nil </span><span class="cov0" title="0">{
+                lg.Err(err).Int64("id", ID).Msg("Error getting SUM of transaction from DB")
+                return totalAmount, err
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+        for rows.Next() </span><span class="cov8" title="1">{
+                err = rows.Scan(&amp;responseID, &amp;totalAmount)
+        }</span>
+        <span class="cov8" title="1">return totalAmount, err</span>
+}
+
+func (s *store) getTransactionByID(ID int64) (transaction, error) <span class="cov8" title="1">{
+        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+
+        var t transaction
+
+        rows, err := s.db.QueryContext(ctx, `SELECT "amount", "type", "parent_id" FROM  "public"."transactions" where id = $1 limit 1`, ID)
+        if err != nil </span><span class="cov0" title="0">{
+                lg.Err(err).Int64("id", ID).Msg("Error querying transaction from DB")
+                return t, err
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+        for rows.Next() </span><span class="cov8" title="1">{
+                err = rows.Scan(&amp;t.Amount, &amp;t.Type, &amp;t.Parent)
+        }</span>
+        <span class="cov8" title="1">return t, err</span>
+}
+
+func (s *store) getTransactionByType(t string) ([]int64, error) <span class="cov8" title="1">{
+        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+
+        var txs []int64
+
+        rows, err := s.db.QueryContext(ctx, `SELECT ID FROM "public"."transactions" where type = $1`, t)
+        if err != nil </span><span class="cov0" title="0">{
+                lg.Err(err).Str("type", t).Msg("Error querying transaction from DB")
+                return txs, err
+        }</span>
+        <span class="cov8" title="1">defer rows.Close()
+        for rows.Next() </span><span class="cov8" title="1">{
+                var t int64
+                err = rows.Scan(&amp;t)
+                txs = append(txs, t)
+        }</span>
+        <span class="cov8" title="1">return txs, err</span>
+}
+
+func (s *store) deleteTransaction(ID int64, t string) error <span class="cov8" title="1">{
+        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+
+        insertStmt := `delete from transactions where ID = $1 OR type = $2;`
+        _, err := s.db.ExecContext(ctx, insertStmt, ID, t)
+        if err != nil </span><span class="cov0" title="0">{
+                lg.Err(err).Int64("id", ID).Msg("Error deleting transaction from DB")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return err</span>
+}
+
+// Ping : Pings server for availability
+func (s *store) Ping() error <span class="cov8" title="1">{
+        return s.db.Ping()
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
